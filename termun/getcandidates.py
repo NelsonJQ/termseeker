@@ -57,7 +57,7 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
         resultItem["docURLs"] = get_un_document_urls(resultItem["docSymbol"])  # dict
 
         # Process files
-        print(f"Processing files for {resultItem["docURLs"]["English"]}...")
+        print(f"Processing files for {resultItem['docURLs']['English']}...")
         englishMD = convert_pdf_to_markdown(resultItem["docURLs"]["English"])
         englishParagraphs = find_paragraphs_with_merge(englishMD, input_search_text, max_paragraphs=paragraphsPerDoc)
         if englishParagraphs:
