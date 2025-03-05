@@ -8,4 +8,4 @@ __version__ = '0.1.0'
 from .src import *
 
 # Expose getCandidates directly at the top level
-from .src.getcandidates import getCandidates
+from .src import getCandidates
