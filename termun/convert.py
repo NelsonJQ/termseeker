@@ -32,6 +32,8 @@ def convert_pdf_to_markdown(url_or_path):
         if is_url:
             # Download the file
             response = requests.get(url_or_path, stream=True)
+            if response:
+                print("\t\tconvert.py -> got response")
             response.raise_for_status()
             
             # Save to temporary file
@@ -45,10 +47,13 @@ def convert_pdf_to_markdown(url_or_path):
         
         # Use pymupdf4llm (assumed to be installed) to convert PDF to markdown
         try:
-            
+            print("\t\tconvert.py -> using pymupdf4llm")
             markdown_content = pymupdf4llm.to_markdown(file_path)
+            if markdown_content:
+                print("\t\tconvert.py -> got markdown content")
         except ImportError:
             # Fallback if pymupdf4llm is not available
+            print("\t\tconvert.py -> fallback to fitz")
             import fitz  # PyMuPDF
             doc = fitz.open(file_path)
             markdown_content = ""
