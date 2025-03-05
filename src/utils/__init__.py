@@ -1,3 +1,3 @@
-# Contents of the file: /UNDOC_aligner/UNDOC_aligner/src/utils/__init__.py
+# Contents of the file: /termun/src/utils/__init__.py
 
-# This file is intentionally left blank.
+"""Utility functions for TermUN"""

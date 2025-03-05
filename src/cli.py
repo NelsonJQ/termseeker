@@ -1,19 +1,31 @@
 import argparse
-from src.getCandidates import getCandidates
+from termun.src.getCandidates import getCandidates
 
 def main_cli():
-    parser = argparse.ArgumentParser(description="Run the UNDOC aligner script with custom arguments.")
-    parser.add_argument("--input_search_text", type=str, required=True, help="The search text to look for in the full text.")
-    parser.add_argument("--input_lang", type=str, nargs='+', required=True, help="The languages to search in.")
-    parser.add_argument("--input_filterSymbols", type=str, nargs='+', required=True, help="The document symbols to filter the search results.")
-    parser.add_argument("--sourcesQuantity", type=int, required=True, help="The number of sources to retrieve.")
-    parser.add_argument("--paragraphsPerDoc", type=int, required=True, help="The number of paragraphs to retrieve per document.")
-    parser.add_argument("--eraseDrafts", type=bool, required=True, help="Whether to erase drafts from the results.")
-
+    """Command-line interface for TermUN"""
+    parser = argparse.ArgumentParser(description='UN Terminology checker and corrector for parallel texts')
+    
+    parser.add_argument('--search', type=str, help='Search text to find terminology for')
+    parser.add_argument('--languages', nargs='+', default=["Spanish"], help='Target languages (e.g., Spanish French)')
+    parser.add_argument('--symbols', nargs='+', default=[], help='Filter symbols (e.g., UNEP/CBD UNEP/EA)')
+    parser.add_argument('--sources', type=int, default=1, help='Number of sources to retrieve')
+    parser.add_argument('--paragraphs', type=int, default=1, help='Paragraphs per document')
+    parser.add_argument('--erase-drafts', action='store_true', help='Erase draft documents')
+    
     args = parser.parse_args()
-
-    result = getCandidates(args.input_search_text, args.input_lang, args.input_filterSymbols, args.sourcesQuantity, args.paragraphsPerDoc, args.eraseDrafts)
-    print(result)
+    
+    if args.search:
+        results = getCandidates(
+            args.search, 
+            args.languages, 
+            args.symbols, 
+            args.sources, 
+            args.paragraphs, 
+            args.erase_drafts
+        )
+        print(results)
+    else:
+        parser.print_help()
 
 if __name__ == "__main__":
     main_cli()
