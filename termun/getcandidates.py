@@ -62,13 +62,21 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
         englishParagraphs = find_paragraphs_with_merge(englishMD, input_search_text, max_paragraphs=paragraphsPerDoc)
         if englishParagraphs:
             resultItem["EnglishParagraphs"] = englishParagraphs  # list
+            print("\n\nEnglish Paragraphs:")
+            print(resultItem)
 
             # Other languages
             for targetLang in input_lang:
+                print(f"Processing language: {targetLang}")
                 langMD = convert_pdf_to_markdown(resultItem["docURLs"][targetLang])
+                targetParagraphs = []
                 for engPara in englishParagraphs:
-                    targetParagraphs = find_similar_paragraph_in_target(engPara, langMD, model_name='distiluse-base-multilingual-cased-v2', top_k=1)
+                    partialParagraphs = find_similar_paragraph_in_target(engPara, langMD, model_name='distiluse-base-multilingual-cased-v2', top_k=1)
+                    if partialParagraphs:
+                        targetParagraphs.extend(partialParagraphs)
+
                 if targetParagraphs:
+                    print(f"Found target paragraphs: {targetParagraphs}")
                     tParaColName = targetLang + 'Paragraphs'
                     resultItem[tParaColName] = targetParagraphs  # list
 
