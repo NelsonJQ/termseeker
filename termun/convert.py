@@ -5,9 +5,10 @@ Convert module for transforming documents to different formats
 import os
 import tempfile
 import requests
+import pymupdf4llm
 from pathlib import Path
 
-def convert_pdf_to_markdown(url_or_path, output_format="markdown"):
+def convert_pdf_to_markdown(url_or_path):
     """
     Convert a PDF document to Markdown format.
     
@@ -44,8 +45,8 @@ def convert_pdf_to_markdown(url_or_path, output_format="markdown"):
         
         # Use pymupdf4llm (assumed to be installed) to convert PDF to markdown
         try:
-            from pymupdf4llm import extract_pdf_content
-            markdown_content = extract_pdf_content(file_path, format=output_format)
+            
+            markdown_content = pymupdf4llm.to_markdown(file_path)
         except ImportError:
             # Fallback if pymupdf4llm is not available
             import fitz  # PyMuPDF
