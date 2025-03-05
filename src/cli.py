@@ -27,5 +27,5 @@ def main_cli():
     else:
         parser.print_help()
 
-if __name__ == "__main__":
-    main_cli()
+#if __name__ == "__main__":
+    #main_cli()

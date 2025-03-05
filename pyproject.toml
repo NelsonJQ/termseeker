@@ -35,4 +35,4 @@ dependencies = [
 "Homepage" = "https://github.com/NelsonJQ/termun"
 
 [project.scripts]
-termun-cli = "termun.src.cli:main_cli"
+termun-cli = "termun.src.__main__:getterms"
