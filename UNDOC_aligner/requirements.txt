@@ -1,0 +1,9 @@
+python-docx
+pymupdf4llm
+requests
+beautifulsoup4
+html2text
+markdown2
+sentence-transformers
+scikit-learn
+duckduckgo-search
