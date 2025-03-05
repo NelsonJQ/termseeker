@@ -1,3 +1,6 @@
+import requests
+from bs4 import BeautifulSoup
+
 def access_un_library_by_term_and_symbol(term, document_symbol) -> str:
     """
     Access the UN Digital Library and search for documents by term and document symbol.
@@ -9,9 +12,6 @@ def access_un_library_by_term_and_symbol(term, document_symbol) -> str:
     Returns:
         str: The HTML content of the search results page if the request is successful, None otherwise.
     """
-    import requests
-    from bs4 import BeautifulSoup
-
     try:
         # Base URL
         base_url = "https://digitallibrary.un.org/search?"
