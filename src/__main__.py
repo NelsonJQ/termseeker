@@ -1,8 +1,10 @@
+import argparse
 import polars as pl
 from .convert import convert_pdf_to_markdown
 from .searchlibrary import access_un_library_by_term_and_symbol, adv_search_un_library, extract_metadata_UNLib
 from .utils import cleanSymbols, get_un_document_urls, find_paragraphs_with_merge, \
                         find_similar_paragraph_in_target, askLLM_term_equivalents, getEquivalents_from_response
+from .cli import main_cli
 
 def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts):
     UNEP_LANGUAGES = {"English": "en", "French": "fr", "Spanish": "es", "Chinese": "zh", "Russian": "ru", "Arabic": "ar", "Portuguese": "pt", "Swahili": "sw"}
@@ -96,3 +98,6 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
             # Continue execution even if there's an error
 
     return metadataCleaned
+
+if __name__ == "__main__":
+    main_cli()

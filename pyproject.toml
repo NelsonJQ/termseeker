@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "termun"
+version = "0.1.0"
+description = "UN Terminology checker and corrector for parallel texts"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {text = "MIT License"}
+keywords = ["python", "terminology", "checker", "corrector"]
+authors = [
+  {name = "NelsonJQ"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "python-docx",
+    "pymupdf4llm",
+    "requests",
+    "beautifulsoup4",
+    "html2text",
+    "markdown2",
+    "sentence-transformers",
+    "scikit-learn",
+    "duckduckgo-search",
+    "polars"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/NelsonJQ/termun"
+
+[project.scripts]
+termun-cli = "termun.src.cli:main_cli"
