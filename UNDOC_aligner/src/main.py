@@ -1,12 +1,12 @@
 import argparse
 import polars as pl
-from convert.pdf_to_markdown import convert_pdf_to_markdown
-from un_library.search import access_un_library_by_term_and_symbol, adv_search_un_library
-from un_library.extract import extract_metadata_UNLib
-from utils.clean_symbols import cleanSymbols
-from utils.document_urls import get_un_document_urls
-from utils.find_paragraphs import find_paragraphs_with_merge
-from utils.bilingual_aligner import find_similar_paragraph_in_target, askLLM_term_equivalents, getEquivalents_from_response
+from termun.convert.pdf_to_markdown import convert_pdf_to_markdown
+from termun.un_library.search import access_un_library_by_term_and_symbol, adv_search_un_library
+from termun.un_library.extract import extract_metadata_UNLib
+from termun.utils.clean_symbols import cleanSymbols
+from termun.utils.document_urls import get_un_document_urls
+from termun.utils.find_paragraphs import find_paragraphs_with_merge
+from termun.utils.bilingual_aligner import find_similar_paragraph_in_target, askLLM_term_equivalents, getEquivalents_from_response
 
 def main(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts):
     UNEP_LANGUAGES = {"English": "en", "French": "fr", "Spanish": "es", "Chinese": "zh", "Russian": "ru", "Arabic": "ar", "Portuguese": "pt", "Swahili": "sw"}
@@ -92,8 +92,12 @@ def main(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, pa
 
     # Create Polars dataframe
     if metadataCleaned:
-        df = pl.DataFrame(metadataCleaned)
-        print(df)
+        try:
+            df = pl.DataFrame(metadataCleaned, strict=False)
+            print(df)
+        except Exception as e:
+            print(f"Error creating Polars dataframe: {e}")
+            # Continue execution even if there's an error
 
     return metadataCleaned
 
