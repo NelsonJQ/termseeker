@@ -18,7 +18,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "termun-cli=termun.cli:main",
+            "termun-cli=termun.src.cli:main_cli",
         ],
     },
     author="Nelson Jaimes Quintero",

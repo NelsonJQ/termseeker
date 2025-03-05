@@ -1,5 +1,5 @@
 import argparse
-from termun.UNDOC_aligner.src.main import main
+from UNDOC_aligner.src.main import main
 
 def main_cli():
     parser = argparse.ArgumentParser(description="Run the UNDOC aligner script with custom arguments.")

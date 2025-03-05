@@ -102,5 +102,5 @@ def main(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, pa
     return metadataCleaned
 
 if __name__ == "__main__":
-    from termun.cli import main_cli
+    from termun.src.cli import main_cli
     main_cli()
