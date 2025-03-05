@@ -1,5 +1,5 @@
 import argparse
-from UNDOC_aligner.src.main import main
+from src.getCandidates import getCandidates
 
 def main_cli():
     parser = argparse.ArgumentParser(description="Run the UNDOC aligner script with custom arguments.")
@@ -12,7 +12,7 @@ def main_cli():
 
     args = parser.parse_args()
 
-    result = main(args.input_search_text, args.input_lang, args.input_filterSymbols, args.sourcesQuantity, args.paragraphsPerDoc, args.eraseDrafts)
+    result = getCandidates(args.input_search_text, args.input_lang, args.input_filterSymbols, args.sourcesQuantity, args.paragraphsPerDoc, args.eraseDrafts)
     print(result)
 
 if __name__ == "__main__":

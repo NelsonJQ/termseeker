@@ -8,7 +8,7 @@ from termun.utils.document_urls import get_un_document_urls
 from termun.utils.find_paragraphs import find_paragraphs_with_merge
 from termun.utils.bilingual_aligner import find_similar_paragraph_in_target, askLLM_term_equivalents, getEquivalents_from_response
 
-def main(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts):
+def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts):
     UNEP_LANGUAGES = {"English": "en", "French": "fr", "Spanish": "es", "Chinese": "zh", "Russian": "ru", "Arabic": "ar", "Portuguese": "pt", "Swahili": "sw"}
 
     metadataCleaned = []
