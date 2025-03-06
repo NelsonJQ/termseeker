@@ -14,6 +14,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from duckduckgo_search import DDGS
 
+# Global variable to store the model
+model = None
+
 # =============================================
 # Document Symbol Cleaning Functions
 # =============================================
@@ -139,6 +142,25 @@ def find_paragraphs_with_merge(text, search_string, max_paragraphs=1) -> list:
 
     return matched_paragraphs
 
+def get_model(model_name='distiluse-base-multilingual-cased-v2'):
+    """
+    Load and return a SentenceTransformer model.
+
+    This function loads a SentenceTransformer model with the specified model name.
+    If the model is already loaded, it returns the existing model instance.
+
+    Args:
+        model_name (str): The name of the model to load. Default is 'distiluse-base-multilingual-cased-v2'.
+
+    Returns:
+        SentenceTransformer: The loaded SentenceTransformer model.
+    """
+    global model
+    if model is None:
+        print("Loading model...")
+        model = SentenceTransformer(model_name)
+    return model
+
 def find_similar_paragraph_in_target(source_paragraph, target_text, model_name='distiluse-base-multilingual-cased-v2', top_k=1) -> list[tuple[str, float]]:
     """
     Find the most similar paragraph(s) in the target text using multilingual embeddings.
@@ -153,7 +175,7 @@ def find_similar_paragraph_in_target(source_paragraph, target_text, model_name='
         List of top matching paragraphs from the target text
     """
     # Load model
-    model = SentenceTransformer(model_name)
+    model = get_model(model_name)
 
     # Split target text into paragraphs
     target_paragraphs = target_text.split('\n\n')
