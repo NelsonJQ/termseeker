@@ -84,6 +84,66 @@ urls = get_un_document_urls('UNEP/EA.5/HLS.1')
 print(urls)
 ```
 
+### Using getCandidates()
+
+The `getCandidates()` function is the core function of this application. It searches for documents in the UN Digital Library based on the provided search text, languages, and filter symbols. It then processes the documents to extract relevant paragraphs and terms.
+
+#### Function Signature
+
+```python
+def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts):
+```
+
+#### Parameters
+
+- `input_search_text` (str): The search text to find terminology for.
+- `input_lang` (list or str): Target languages (e.g., ["Spanish", "French"]). Use "ALL" for all supported languages.
+- `input_filterSymbols` (list): Filter symbols (e.g., ["UNEP/CBD", "UNEP/EA"]).
+- `sourcesQuantity` (int): Number of sources to retrieve.
+- `paragraphsPerDoc` (int): Paragraphs per document.
+- `eraseDrafts` (bool): Whether to erase draft documents.
+
+#### Example Usage
+
+```python
+from termun.getcandidates import getCandidates
+
+results = getCandidates(
+    input_search_text="climate change",
+    input_lang=["Spanish", "French"],
+    input_filterSymbols=["UNEP/CBD"],
+    sourcesQuantity=3,
+    paragraphsPerDoc=2,
+    eraseDrafts=True
+)
+print(results)
+```
+
+### Using consolidate_results()
+
+The `consolidate_results()` function from `utils.py` consolidates the results obtained from `getCandidates()` into a compact dataframe and optionally exports it as an Excel file.
+
+#### Function Signature
+
+```python
+def consolidate_results(metadataCleaned, exportExcel=False) -> list:
+```
+
+#### Parameters
+
+- `metadataCleaned` (list): List of dictionaries containing the cleaned metadata.
+- `exportExcel` (bool): Whether to export the consolidated results as an Excel file.
+
+#### Example Usage
+
+```python
+from termun.utils import consolidate_results
+
+# Assuming `results` is the output from getCandidates()
+consolidated_results = consolidate_results(results, exportExcel=True)
+print(consolidated_results)
+```
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
