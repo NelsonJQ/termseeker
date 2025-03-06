@@ -105,7 +105,6 @@ def get_un_document_urls(document_symbol) -> dict:
 
     return urls
 
-import re
 
 def find_paragraphs_with_merge(text, search_string, max_paragraphs=1) -> list:
     paragraphs = text.split('\n\n')
@@ -137,10 +136,10 @@ def find_paragraphs_with_merge(text, search_string, max_paragraphs=1) -> list:
             if found_count >= max_paragraphs:
                 break
 
-    if max_paragraphs == 1:
-        return matched_paragraphs[0] if matched_paragraphs else None
+    #if max_paragraphs == 1:
+        #return [matched_paragraphs[0]] if matched_paragraphs else None
 
-    return matched_paragraphs
+    return matched_paragraphs if matched_paragraphs else None
 
 def get_model(model_name='distiluse-base-multilingual-cased-v2'):
     """

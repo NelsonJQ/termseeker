@@ -69,6 +69,10 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
             for targetLang in input_lang:
                 print(f"Processing language: {targetLang}")
                 langMD = convert_pdf_to_markdown(resultItem["docURLs"][targetLang])
+                # Save langMD in text file
+                with open(f"{resultItem['docSymbol']}_{targetLang}.txt", "w") as f:
+                    f.write(langMD)
+
                 targetParagraphs = []
                 for engPara in englishParagraphs:
                     partialParagraphs = find_similar_paragraph_in_target(engPara, langMD, model_name='distiluse-base-multilingual-cased-v2', top_k=1)
