@@ -1,8 +1,17 @@
+import os
+import re
 import polars as pl
 from .convert import convert_pdf_to_markdown
 from .searchlibrary import access_un_library_by_term_and_symbol, adv_search_un_library, extract_metadata_UNLib
 from .utils import cleanSymbols, get_un_document_urls, find_paragraphs_with_merge, \
                         find_similar_paragraph_in_target, askLLM_term_equivalents, getEquivalents_from_response
+
+
+def sanitize_filename(filename):
+    # Replace any character that is not alphanumeric, underscore, or hyphen with an underscore
+    sanitized = re.sub(r'[^\w\-_\.]', '_', filename)
+    return sanitized
+
 
 def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts):
     UNEP_LANGUAGES = {"English": "en", "French": "fr", "Spanish": "es", "Chinese": "zh", "Russian": "ru", "Arabic": "ar", "Portuguese": "pt", "Swahili": "sw"}
@@ -69,8 +78,17 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
             for targetLang in input_lang:
                 print(f"Processing language: {targetLang}")
                 langMD = convert_pdf_to_markdown(resultItem["docURLs"][targetLang])
+                
+                # Ensure the directory exists before saving the file
+                output_dir = "/content"
+                os.makedirs(output_dir, exist_ok=True)
+                
+                # Sanitize the docSymbol for use in the file name
+                sanitized_docSymbol = sanitize_filename(resultItem['docSymbol'])
+                
                 # Save langMD in text file
-                with open(f"{resultItem['docSymbol']}_{targetLang}.txt", "w") as f:
+                output_file_path = os.path.join(output_dir, f"{sanitized_docSymbol}_{targetLang}.txt")
+                with open(output_file_path, "w") as f:
                     f.write(langMD)
 
                 targetParagraphs = []
