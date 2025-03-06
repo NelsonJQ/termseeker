@@ -28,7 +28,8 @@ dependencies = [
     "sentence-transformers",
     "scikit-learn",
     "duckduckgo-search",
-    "polars"
+    "polars",
+    "xlsxwriter"
 ]
 
 [project.urls]

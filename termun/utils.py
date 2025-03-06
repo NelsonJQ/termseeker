@@ -13,6 +13,8 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from duckduckgo_search import DDGS
+import polars as pl
+import os
 
 # Global variable to store the model
 model = None
@@ -40,6 +42,7 @@ def cleanSymbols(input_dict, removeDrafts=False, maxResults=3) -> list:
     spaces_count = 0
     hyphen_count = 0
     removed_count = 0
+    englishonly_count = 0
 
     if int(maxResults) > 50:
         maxResults = 50
@@ -48,6 +51,10 @@ def cleanSymbols(input_dict, removeDrafts=False, maxResults=3) -> list:
         # If removeDrafts is True, skip items with 'draft' in docType
         if removeDrafts and 'draft' in item['docType'].lower():
             removed_count += 1
+            continue
+
+        if item['isMultiple'] == False or item['isMultiple'] == None:
+            englishonly_count += 1
             continue
 
         original_doc_symbol = item['docSymbol']
@@ -74,7 +81,7 @@ def cleanSymbols(input_dict, removeDrafts=False, maxResults=3) -> list:
         if len(cleaned_dict) >= maxResults:
             break
 
-    print(f"Modified {modified_count} out of {len(input_dict)} symbols. Removed whitespaces from {spaces_count} and hyphens from {hyphen_count}. Removed {removed_count} items with 'draft' in docType.")
+    print(f"Modified {modified_count} out of {len(input_dict)} symbols. Removed whitespaces from {spaces_count} and hyphens from {hyphen_count}. Filtered out {removed_count} items with 'draft' in docType, and {englishonly_count} with no translations available.")
     return cleaned_dict
 
 def get_un_document_urls(document_symbol) -> dict:
@@ -263,3 +270,145 @@ def getEquivalents_from_response(response) -> list:
     matches = re.findall(pattern, response, re.DOTALL)
 
     return matches
+
+def consolidate_results(metadataCleaned, exportExcel=False) -> list:
+    """
+    Consolidate results by EnglishTerm and format the output according to specified requirements.
+    
+    Args:
+        metadataCleaned: List of dictionaries containing the metadata
+        
+    Returns:
+        List of dictionaries with consolidated data
+    """
+    if not metadataCleaned:
+        return []
+        
+    # Group by EnglishTerm
+    consolidated = {}
+    for item in metadataCleaned:
+        english_term = item.get('EnglishTerm', '')
+        if not english_term:
+            continue
+            
+        if english_term not in consolidated:
+            consolidated[english_term] = {}
+            
+        # Get source information for this specific item
+        doc_symbol = item.get('docSymbol', 'Unknown')
+        pub_date = item.get('publicationDate', 'Unknown')
+        
+        for key, value in item.items():
+            # Skip docURLs
+            if key == 'docURLs':
+                continue
+                
+            # Process Term keys
+            if key.endswith('Term'):
+                if key not in consolidated[english_term]:
+                    consolidated[english_term][key] = value
+                    
+            # Process Synonyms keys
+            elif key.endswith('Synonyms'):
+                if value is None:
+                    continue
+                if key not in consolidated[english_term]:
+                    consolidated[english_term][key] = value if isinstance(value, list) else [value]
+                else:
+                    if isinstance(value, list):
+                        consolidated[english_term][key].extend(value)
+                    else:
+                        consolidated[english_term][key].append(value)
+                    # Remove duplicates
+                    consolidated[english_term][key] = list(set(consolidated[english_term][key]))
+                    
+            # Process Paragraphs keys
+            elif key.endswith('Paragraphs'):
+                if value is None:
+                    continue
+                    
+                # Format paragraphs with source information
+                formatted_paragraphs = []
+                if isinstance(value, list):
+                    for paragraph in value:
+                        if isinstance(paragraph, str):
+                            formatted_paragraphs.append(f"{paragraph} (Source: {doc_symbol} on {pub_date})")
+                        elif isinstance(paragraph, tuple) and len(paragraph) >= 1:
+                            formatted_paragraphs.append(f"{paragraph[0]} (Source: {doc_symbol} on {pub_date})")
+                
+                # Join paragraphs with double newlines
+                formatted_text = "\n\n".join(formatted_paragraphs) if formatted_paragraphs else ""
+                
+                if key not in consolidated[english_term]:
+                    consolidated[english_term][key] = formatted_text
+                elif formatted_text:  # Only add if there's actual text
+                    consolidated[english_term][key] += "\n\n" + formatted_text
+                    
+            # Other metadata keys
+            elif key in ['docSymbol', 'publicationDate', 'docType', 'docTitle']:
+                if key not in consolidated[english_term]:
+                    consolidated[english_term][key] = value
+                elif value and value != consolidated[english_term][key]:
+                    if isinstance(consolidated[english_term][key], str):
+                        consolidated[english_term][key] += "\n" + str(value)
+                    else:
+                        consolidated[english_term][key] = str(consolidated[english_term][key]) + "\n" + str(value)
+    
+    # Convert to list and sort keys in the desired order
+    result = []
+    for term, data in consolidated.items():
+        # Create a new dictionary with ordered keys
+        ordered_data = {}
+        
+        # 1. EnglishTerm
+        ordered_data['EnglishTerm'] = term
+        
+        # 2. Other Term keys
+        term_keys = sorted([k for k in data.keys() if k.endswith('Term') and k != 'EnglishTerm'])
+        for key in term_keys:
+            ordered_data[key] = data[key]
+            
+        # 3. Synonyms keys
+        synonym_keys = sorted([k for k in data.keys() if k.endswith('Synonyms')])
+        for key in synonym_keys:
+            ordered_data[key] = data[key]
+            
+        # 4. EnglishParagraphs
+        if 'EnglishParagraphs' in data:
+            ordered_data['EnglishParagraphs'] = data['EnglishParagraphs']
+            
+        # 5. Other Paragraph keys
+        para_keys = sorted([k for k in data.keys() if k.endswith('Paragraphs') and k != 'EnglishParagraphs'])
+        for key in para_keys:
+            ordered_data[key] = data[key]
+            
+        # 6. Metadata keys
+        meta_keys = ['docSymbol', 'publicationDate', 'docType', 'docTitle']
+        for key in meta_keys:
+            if key in data:
+                ordered_data[key] = data[key]
+        
+        result.append(ordered_data)
+    
+    # Export to Excel if requested in a try-except block
+    if exportExcel and result:
+        try:
+            df = pl.DataFrame(result.copy())
+            
+            # Use EnglishTerm for the filename
+            english_term = result[0]['EnglishTerm']
+            base_filename = re.sub(r'[\\/*?:"<>|]', '_', english_term)
+            filename = f"{base_filename}.xlsx"
+            
+            # Check if file exists and append number if needed
+            counter = 1
+            while os.path.exists(filename):
+                filename = f"{base_filename}_{counter}.xlsx"
+                counter += 1
+                
+            df.write_excel(filename)
+            print(f"Exported consolidated results to '{filename}'")
+        except Exception as e:
+            print(f"Error exporting consolidated results: {str(e)}")
+
+    return result

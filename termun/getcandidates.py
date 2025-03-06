@@ -102,7 +102,15 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                     tParaColName = targetLang + 'Paragraphs'
                     resultItem[tParaColName] = targetParagraphs  # list
 
+
+                    # Initialize targetTerm and targetSynonyms
+                    targetTermColName = targetLang + 'Term'
+                    targetSynonymsColName = targetLang + 'Synonyms'
+                    resultItem[targetTermColName] = None
+                    resultItem[targetSynonymsColName] = None
+
                     # Extract bilingual terms as LLM string answer
+                    # TO-DO - Fallback to other models if LLM is not available
                     targetTerms = askLLM_term_equivalents(input_search_text, englishParagraphs, targetParagraphs, "English", targetLang)
                     print(targetTerms)
 
@@ -112,8 +120,6 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                         targetTerms = list(set(targetTerms))
 
                         # Save the targetTerm in metadata w/ its related
-                        targetTermColName = targetLang + 'Term'
-                        targetSynonymsColName = targetLang + 'Synonyms'
                         resultItem[targetTermColName] = targetTerms[0]
                         resultItem[targetSynonymsColName] = targetTerms[1:]
 

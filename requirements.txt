@@ -7,3 +7,4 @@ markdown2
 sentence-transformers
 scikit-learn
 duckduckgo-search
+xlsxwriter
