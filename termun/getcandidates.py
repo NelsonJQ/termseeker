@@ -110,7 +110,6 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                     resultItem[targetSynonymsColName] = None
 
                     # Extract bilingual terms as LLM string answer
-                    # TO-DO - Fallback to other models if LLM is not available
                     targetTerms = askLLM_term_equivalents(input_search_text, englishParagraphs, targetParagraphs, "English", targetLang)
                     print(targetTerms)
 

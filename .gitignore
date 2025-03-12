@@ -70,6 +70,7 @@ docs/_build/
 
 # Jupyter Notebook
 *.ipynb
+playgroundprivate.ipynb
 
 # IPython
 profile_default/
