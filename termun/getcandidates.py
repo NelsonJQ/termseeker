@@ -4,8 +4,8 @@ import polars as pl
 from .convert import convert_pdf_to_markdown
 from .searchlibrary import access_un_library_by_term_and_symbol, adv_search_un_library, extract_metadata_UNLib
 from .utils import cleanSymbols, get_un_document_urls, find_paragraphs_with_merge, \
-                        find_similar_paragraph_in_target, askLLM_term_equivalents, getEquivalents_from_response
-
+                        find_similar_paragraph_in_target, askLLM_term_equivalents, getEquivalents_from_response, consolidate_results
+from .askTermBases import queryUNTerm, consolidate_UNTermResults, report_missing_translations
 
 def sanitize_filename(filename):
     # Replace any character that is not alphanumeric, underscore, or hyphen with an underscore
@@ -132,3 +132,75 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
             # Continue execution even if there's an error
 
     return metadataCleaned
+
+def getTermsAndCandidates(input_search_text, lang_to_search="ALL", input_filterSymbols=["UNEP", "FCCC", "S"], 
+                          sourcesQuantity=3, paragraphsPerDoc=2, eraseDrafts=True):
+    """
+    Performs a comprehensive terminology search combining UNTERM database and UN document analysis.
+    First queries UNTERM database, then checks for missing preferred translations and fills gaps by
+    analyzing UN Library documents to extract terminology candidates.
+    
+    Args:
+        input_search_text (str): The term to search for
+        lang_to_search (str or list): Target language(s) to search for
+        input_filterSymbols (list): Document symbols to filter the search by
+        sourcesQuantity (int): Maximum number of source documents to process
+        paragraphsPerDoc (int): Maximum paragraphs to extract per document
+        eraseDrafts (bool): Whether to remove draft documents from results
+    
+    Returns:
+        dict: Combined terminology data from UNTERM and document extraction
+    """
+    # Step 1: Query the UN Terminology Database
+    unterm_results = queryUNTerm(input_search_text)
+    
+    # Step 2: Consolidate UNTERM results
+    consolidated_unterm = consolidate_UNTermResults(unterm_results)
+    
+    # Step 3: Identify missing translations
+    missing_translations = report_missing_translations(consolidated_unterm)
+    missing_preferred = missing_translations.get('missingPreferred', [])
+    
+    # Check if there are missing preferred translations
+    if not missing_preferred or all(not lang for lang in missing_preferred):
+        return consolidated_unterm
+    
+    # Determine which languages to search for in documents
+    languages_to_extract = []
+    if lang_to_search == "ALL":
+        # When ALL is specified, search for all missing languages
+        languages_to_extract = missing_preferred
+    else:
+        # When specific languages are requested, only search for those that are also missing
+        if isinstance(lang_to_search, list):
+            languages_to_extract = [lang for lang in lang_to_search if lang in missing_preferred]
+    
+    # If no languages to search for after filtering, return UNTERM results
+    if not languages_to_extract:
+        return consolidated_unterm
+    
+    # Step 4: Extract terminology candidates from UN Library documents
+    candidates_results = getCandidates(
+        input_search_text=input_search_text,
+        input_lang=languages_to_extract,
+        input_filterSymbols=input_filterSymbols,
+        sourcesQuantity=sourcesQuantity,
+        paragraphsPerDoc=paragraphsPerDoc,
+        eraseDrafts=eraseDrafts
+    )
+    
+    # Step 5: Consolidate library results
+    consolidated_library = consolidate_results(candidates_results, exportExcel=False)
+    
+    # Step 6: Combine both results preserving order
+    combined_results = consolidated_unterm.copy()
+    combined_results["UNLibrary"] = True
+    
+    # Add library results if available
+    if consolidated_library and len(consolidated_library) > 0:
+        library_dict = consolidated_library[0]  # First item from the consolidated list
+        for key, value in library_dict.items():
+            if key not in combined_results:
+                combined_results[key] = value
+    
+    return combined_results
