@@ -155,7 +155,7 @@ def getTermsAndCandidates(input_search_text, lang_to_search="ALL", input_filterS
     unterm_results = queryUNTerm(input_search_text)
     
     # Step 2: Consolidate UNTERM results
-    consolidated_unterm = consolidate_UNTermResults(unterm_results)
+    consolidated_unterm = consolidate_UNTermResults(unterm_results, input_search_text)
     
     # Step 3: Identify missing translations
     missing_translations = report_missing_translations(consolidated_unterm)
