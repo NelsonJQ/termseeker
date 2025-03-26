@@ -120,3 +120,6 @@ cython_debug/
 
 # VS Code
 .vscode/
+testNoLM.xlsx
+log_first200.txt
+terminology_data.json

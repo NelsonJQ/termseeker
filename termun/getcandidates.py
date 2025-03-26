@@ -13,7 +13,7 @@ def sanitize_filename(filename):
     return sanitized
 
 
-def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts):
+def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts, localLM=False):
     UNEP_LANGUAGES = {"English": "en", "French": "fr", "Spanish": "es", "Chinese": "zh", "Russian": "ru", "Arabic": "ar", "Portuguese": "pt", "Swahili": "sw"}
 
     metadataCleaned = []
@@ -68,6 +68,7 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
         # Process files
         print(f"Processing files for {resultItem['docURLs']['English']}...")
         englishMD = convert_pdf_to_markdown(resultItem["docURLs"]["English"])
+        print("Finding paragraphs...")
         englishParagraphs = find_paragraphs_with_merge(englishMD, input_search_text, max_paragraphs=paragraphsPerDoc)
         if englishParagraphs:
             resultItem["EnglishParagraphs"] = englishParagraphs  # list
@@ -110,17 +111,21 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                     resultItem[targetSynonymsColName] = None
 
                     # Extract bilingual terms as LLM string answer
-                    targetTerms = askLLM_term_equivalents(input_search_text, englishParagraphs, targetParagraphs, "English", targetLang)
-                    print(targetTerms)
+                    if localLM == None:
+                        targetTerms = []
+                    
+                    elif localLM == False or localLM==True:
+                        targetTerms = askLLM_term_equivalents(input_search_text, englishParagraphs, targetParagraphs, "English", targetLang, customInference=localLM)
+                        print(targetTerms)
 
-                    targetTerms = getEquivalents_from_response(targetTerms)  # list of str
-                    if targetTerms:
-                        # Unique values of list
-                        targetTerms = list(set(targetTerms))
+                        targetTerms = getEquivalents_from_response(targetTerms)  # list of str
+                        if targetTerms:
+                            # Unique values of list
+                            targetTerms = list(set(targetTerms))
 
-                        # Save the targetTerm in metadata w/ its related
-                        resultItem[targetTermColName] = targetTerms[0]
-                        resultItem[targetSynonymsColName] = targetTerms[1:]
+                            # Save the targetTerm in metadata w/ its related
+                            resultItem[targetTermColName] = targetTerms[0]
+                            resultItem[targetSynonymsColName] = targetTerms[1:]
 
     # Create Polars dataframe
     if metadataCleaned:

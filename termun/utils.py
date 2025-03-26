@@ -53,6 +53,10 @@ def cleanSymbols(input_dict, removeDrafts=False, maxResults=3) -> list:
             removed_count += 1
             continue
 
+        if removeDrafts and 'draft' in item['docTitle'].lower():
+            removed_count += 1
+            continue
+
         if item['isMultiple'] == False or item['isMultiple'] == None:
             englishonly_count += 1
             continue
@@ -119,7 +123,7 @@ def find_paragraphs_with_merge(text, search_string, max_paragraphs=1) -> list:
     found_count = 0
 
     for i, paragraph in enumerate(paragraphs):
-        if search_string in paragraph:
+        if search_string.lower() in paragraph.lower():
             matched_paragraph = paragraph
 
             if i < len(paragraphs) - 1:
@@ -232,8 +236,8 @@ def askLLM_term_equivalents(source_term, source_paragraphs, target_paragraphs, s
     target_text = "\n\n".join(target_texts)
 
     prompt = f"""
-    I need to extract term equivalents of {source_term} between these {source_language} and {target_language} paragraphs.
-    Please identify the {target_language} equivalent terms for the {source_language} term: <SOURCETERM>{source_term}</SOURCETERM>, preserving all formatting
+    I need to extract term equivalents of this single term '{source_term}' from these {source_language} and {target_language} paragraphs.
+    Please identify the {target_language} equivalent terms for the {source_language} term: <source>{source_term}</source>, preserving all formatting
     (italics, capitalization, gender, and number).
 
     {source_language.upper()} PARAGRAPH:
@@ -242,10 +246,10 @@ def askLLM_term_equivalents(source_term, source_paragraphs, target_paragraphs, s
     {target_language.upper()} PARAGRAPH(S):
     {target_text}
 
-    Please list the equivalents in this format:
-    "<SOURCETERM>{source_language}</SOURCETERM>" = "<EQUIVALENTTERM>{target_language}</EQUIVALENTTERM>"
+    Please list the equivalents of '{source_term}' in this format:
+    "<source>{source_term}</source>" = "<equivalent>INSERT_TERM</equivalent>"
 
-    Answer only with the requested term and its equivalent in a single line.
+    Do not modify the tag names <source> and <equivalent>. Do not include other source terms than '{source_term}'.
     Preserve all formatting in both languages.
     """
     if customInference:
@@ -296,6 +300,7 @@ def lmstudioLocalAPI(prompt, url='http://localhost:1234/v1'):
             {"role": "user", "content": prompt},
         ],
         temperature=0.1,
+        max_completion_tokens=800
     )
 
     # Return the chatbot's response
@@ -312,7 +317,7 @@ def getEquivalents_from_response(response) -> list:
         List of extracted equivalent terms
     """
     # Use regex to find all occurrences of text between <EQUIVALENTTERM> and </EQUIVALENTTERM>
-    pattern = r'<EQUIVALENTTERM>(.*?)</EQUIVALENTTERM>'
+    pattern = r'<equivalent>(.*?)</equivalent>'
     matches = re.findall(pattern, response, re.DOTALL)
 
     return matches

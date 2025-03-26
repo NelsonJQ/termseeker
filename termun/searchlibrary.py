@@ -75,7 +75,7 @@ def adv_search_un_library(document_symbol=None, fulltext_term=None, date_from=No
         "date_selector": {
             "dateType": "creation_date",
             "datePeriod": "specificdateperiod",
-            "dateFrom": date_from or "2000-01-01",
+            "dateFrom": date_from or "2019-01-01",
             "dateTo": date_to or "2025-02-17"
         },
         "clauses": []
