@@ -117,34 +117,116 @@ def get_un_document_urls(document_symbol) -> dict:
     return urls
 
 
+def is_separator_or_note(paragraph):
+    """
+    Check if a paragraph is a separator, note, or empty paragraph that should be skipped.
+    
+    Args:
+        paragraph (str): The paragraph text to check
+        
+    Returns:
+        bool: True if the paragraph is a separator or note, False otherwise
+    """
+    # Check if paragraph is empty
+    if len(paragraph.strip()) == 0:
+        return True
+    
+    # Check for different types of notes or separators
+    is_page_number = re.match(r'\s*\*\*\d+\*\*\s*', paragraph)
+    is_footnote = re.match(r'\s*K\d{7}\s\d{6}\s*', paragraph)
+    is_othernote = re.match(r'^(?:\*\*.*\/.*\*\*|\*\*.*\/.*\d$|\d.*\/.*\*\*)$', paragraph)
+    is_separator = re.match(r'\s*-+\s*', paragraph)
+    
+    return bool(is_page_number or is_footnote or is_othernote or is_separator)
+
+def is_complete_sentence(text):
+    """
+    Check if a text ends with proper sentence-ending punctuation.
+    
+    Args:
+        text (str): The text to check
+        
+    Returns:
+        bool: True if the text ends with proper punctuation, False otherwise
+    """
+    text = text.strip()
+    if not text:
+        return False
+    
+    # Common sentence-ending punctuation in multiple languages
+    ending_punctuation = ['.', '!', '?', '.)', '.', '».', '.")', ':]', '؟', '।', '。', '．']
+    
+    # Check for these ending characters
+    for punct in ending_punctuation:
+        if text.endswith(punct):
+            return True
+            
+    return False
+
 def find_paragraphs_with_merge(text, search_string, max_paragraphs=1) -> list:
+    """
+    Find paragraphs containing a search string and merge with continuation paragraphs if needed.
+    
+    This function splits text into paragraphs and searches for occurrences of the search string.
+    When a match is found, it checks if the paragraph is complete (ends with proper punctuation)
+    and merges with subsequent paragraphs when necessary to form complete thoughts.
+    
+    Args:
+        text (str): The full text to search within
+        search_string (str): The string to search for in paragraphs
+        max_paragraphs (int, optional): Maximum number of paragraphs to return. Default is 1.
+                                       Set to None to return all matching paragraphs.
+    
+    Returns:
+        list or None: A list of matched paragraphs (possibly merged with continuation text),
+                     or None if no matches were found.
+    """
     paragraphs = text.split('\n\n')
     matched_paragraphs = []
     found_count = 0
 
     for i, paragraph in enumerate(paragraphs):
+        # Check if this paragraph contains the search string
         if search_string.lower() in paragraph.lower():
             matched_paragraph = paragraph
-
-            if i < len(paragraphs) - 1:
-                next_paragraph = paragraphs[i + 1]
-                is_page_number = re.match(r'\s*\*\*\d+\*\*\s*', next_paragraph)
-                is_footnote = re.match(r'\s*K\d{7}\s\d{6}\s*', next_paragraph)
-
-                if (is_page_number or is_footnote) and i < len(paragraphs) - 2:
-                    separator_index = i + 2
-                    if separator_index < len(paragraphs) and re.match(r'\s*-+\s*', paragraphs[separator_index]):
-                        separator_index += 1
-
-                    if separator_index < len(paragraphs):
-                        continuation = paragraphs[separator_index]
-                        if not re.match(r'\s*\d+\.\s', continuation):
-                            matched_paragraph = matched_paragraph + " " + continuation
-
+            
+            # Check if paragraph is incomplete (doesn't end with proper punctuation)
+            paragraph_needs_continuation = not is_complete_sentence(paragraph)
+            
+            # Continue checking next paragraphs for continuation
+            next_index = i + 1
+            
+            while paragraph_needs_continuation and next_index < len(paragraphs):
+                next_para = paragraphs[next_index].strip()
+                
+                # If it's a separator or note, skip it but continue looking
+                if is_separator_or_note(next_para):
+                    next_index += 1
+                    continue
+                
+                # Found actual content - check if it's not a new numbered paragraph
+                # that would indicate a new thought rather than continuation
+                if not re.match(r'\s*\d+\.\s', next_para):
+                    matched_paragraph = matched_paragraph + " " + next_para
+                    
+                    # Check if we now have a complete sentence
+                    if is_complete_sentence(matched_paragraph):
+                        paragraph_needs_continuation = False
+                    else:
+                        # Continue looking for more text
+                        next_index += 1
+                else:
+                    # It's a new numbered paragraph, stop merging
+                    paragraph_needs_continuation = False
+                
+                # If we've checked too many paragraphs ahead, stop to prevent infinite loops
+                if next_index > i + 5:  # Arbitrary limit to prevent excessive merging
+                    paragraph_needs_continuation = False
+            
             matched_paragraphs.append(matched_paragraph)
             found_count += 1
 
-            # Check if max_paragraphs is None or if we've reached the limit
+            # Check if we've reached the limit of paragraphs to return
             if max_paragraphs is not None and found_count >= max_paragraphs:
                 break
 
