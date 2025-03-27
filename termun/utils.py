@@ -254,6 +254,7 @@ def get_model(model_name='distiluse-base-multilingual-cased-v2'):
 def find_similar_paragraph_in_target(source_paragraph, target_text, model_name='distiluse-base-multilingual-cased-v2', top_k=1) -> list[tuple[str, float]]:
     """
     Find the most similar paragraph(s) in the target text using multilingual embeddings.
+    Merges incomplete paragraphs to ensure comparison of complete thoughts.
 
     Args:
         source_paragraph: The source paragraph to match
@@ -267,12 +268,60 @@ def find_similar_paragraph_in_target(source_paragraph, target_text, model_name='
     # Load model
     model = get_model(model_name)
 
-    # Split target text into paragraphs
-    target_paragraphs = target_text.split('\n\n')
+    # Split target text into raw paragraphs
+    raw_paragraphs = target_text.split('\n\n')
+    
+    # Process paragraphs - merge incomplete sentences and skip separators
+    processed_paragraphs = []
+    i = 0
+    while i < len(raw_paragraphs):
+        paragraph = raw_paragraphs[i].strip()
+        
+        # Skip separator or note paragraphs
+        if is_separator_or_note(paragraph):
+            i += 1
+            continue
+            
+        # Check if paragraph is incomplete
+        if not is_complete_sentence(paragraph):
+            merged_paragraph = paragraph
+            next_index = i + 1
+            
+            # Try to find continuation paragraphs
+            while next_index < len(raw_paragraphs) and not is_complete_sentence(merged_paragraph):
+                next_para = raw_paragraphs[next_index].strip()
+                
+                # Skip separators but continue looking
+                if is_separator_or_note(next_para):
+                    next_index += 1
+                    continue
+                
+                # Check if it's not a new numbered paragraph (which would indicate a new thought)
+                if not re.match(r'\s*\d+\.\s', next_para):
+                    merged_paragraph = merged_paragraph + " " + next_para
+                    next_index += 1
+                else:
+                    # It's a new numbered paragraph, stop merging
+                    break
+                
+                # Limit the number of paragraphs to merge to prevent excessive merging
+                if next_index > i + 5:
+                    break
+            
+            processed_paragraphs.append(merged_paragraph)
+            i = next_index  # Skip the paragraphs we've merged
+        else:
+            # It's already a complete paragraph
+            processed_paragraphs.append(paragraph)
+            i += 1
+    
+    # Handle empty processed_paragraphs (all were separators/notes)
+    if not processed_paragraphs:
+        return []
 
     # Compute embeddings
     source_embedding = model.encode([source_paragraph])
-    target_embeddings = model.encode(target_paragraphs)
+    target_embeddings = model.encode(processed_paragraphs)
 
     # Compute similarities
     similarities = cosine_similarity(source_embedding, target_embeddings)[0]
@@ -281,7 +330,7 @@ def find_similar_paragraph_in_target(source_paragraph, target_text, model_name='
     top_indices = np.argsort(similarities)[-top_k:][::-1]
 
     # Return top matching paragraphs and their similarity scores
-    results = [(target_paragraphs[i], similarities[i]) for i in top_indices]
+    results = [(processed_paragraphs[i], similarities[i]) for i in top_indices]
 
     return results
 
