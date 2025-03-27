@@ -132,9 +132,9 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
     for i, resultItem in enumerate(metadataCleaned):
         # Check if we've processed enough documents and have paragraphs for all languages
         if processed_docs >= sourcesQuantity:
-            all_languages_have_paragraphs = all(len(paras) > 0 for lang, paras in lang_paragraphs.items())
+            all_languages_have_paragraphs = all(len(paras) >= paragraphsPerDoc for lang, paras in lang_paragraphs.items())
             if all_languages_have_paragraphs:
-                print(f"Processed {processed_docs} documents and found paragraphs for all languages")
+                print(f"Processed {processed_docs} documents and found at least {paragraphsPerDoc} paragraphs for all languages")
                 break
                 
         # Track that we're processing this document
@@ -220,12 +220,7 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                                 found_target_lang_para = True
                                 break
                                 
-                            # As a fallback, if language detection is uncertain but the paragraph isn't English
-                            elif detected_lang != 'en' and detected_lang != 'unknown':
-                                print(f"Found paragraph in language {detected_lang}, accepting as {targetLang}")
-                                new_target_paragraphs.append(para[0])
-                                found_target_lang_para = True
-                                break
+                            
                 
                 # If we don't have enough target paragraphs, try with additional English paragraphs
                 if len(new_target_paragraphs) < paragraphsPerDoc and len(all_english_paragraphs) > len(processed_eng_paragraphs):
@@ -297,11 +292,11 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
         if found_target_paragraphs:
             processed_results.append(resultItem)
             
-            # If we have enough results and found at least one paragraph for each language
+            # If we have enough results and found at least the required number of paragraphs for each language
             if len(processed_results) >= sourcesQuantity:
-                all_languages_have_paragraphs = all(len(paras) > 0 for lang, paras in lang_paragraphs.items())
+                all_languages_have_paragraphs = all(len(paras) >= paragraphsPerDoc for lang, paras in lang_paragraphs.items())
                 if all_languages_have_paragraphs:
-                    print(f"Found paragraphs for all languages after processing {processed_docs} documents")
+                    print(f"Found at least {paragraphsPerDoc} paragraphs for all languages after processing {processed_docs} documents")
                     break
     
     # Log the language paragraph counts
@@ -311,6 +306,13 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
     
     # Return the processed results, or an empty list if none
     if processed_results:
+        # Check if we have the required number of paragraphs for each language
+        all_languages_have_enough_paragraphs = all(len(paras) >= paragraphsPerDoc for lang, paras in lang_paragraphs.items())
+        if not all_languages_have_enough_paragraphs:
+            print(f"Warning: Not all languages have {paragraphsPerDoc} or more paragraphs.")
+            # You can uncomment the following line to strictly enforce the paragraph requirement
+            # return []
+            
         # Create Polars dataframe with the successfully processed results
         try:
             df = pl.DataFrame(processed_results, strict=False)
