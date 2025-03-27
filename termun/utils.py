@@ -53,7 +53,7 @@ def cleanSymbols(input_dict, removeDrafts=False, maxResults=3) -> list:
             removed_count += 1
             continue
 
-        if removeDrafts and 'draft' in item['docTitle'].lower():
+        if removeDrafts and ('draft' in item['docTitle'].lower() or 'letter' in item['docTitle'].lower()):
             removed_count += 1
             continue
 

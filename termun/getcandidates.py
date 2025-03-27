@@ -240,10 +240,6 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                                 if detected_lang == target_lang_code:
                                     new_target_paragraphs.append(para[0])
                                     break
-                                # Same fallback as above
-                                elif detected_lang != 'en' and detected_lang != 'unknown':
-                                    new_target_paragraphs.append(para[0])
-                                    break
                             
                             if len(new_target_paragraphs) >= paragraphsPerDoc:
                                 break
