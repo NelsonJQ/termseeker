@@ -144,11 +144,9 @@ def find_paragraphs_with_merge(text, search_string, max_paragraphs=1) -> list:
             matched_paragraphs.append(matched_paragraph)
             found_count += 1
 
-            if found_count >= max_paragraphs:
+            # Check if max_paragraphs is None or if we've reached the limit
+            if max_paragraphs is not None and found_count >= max_paragraphs:
                 break
-
-    #if max_paragraphs == 1:
-        #return [matched_paragraphs[0]] if matched_paragraphs else None
 
     return matched_paragraphs if matched_paragraphs else None
 

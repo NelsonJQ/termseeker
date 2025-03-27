@@ -7,6 +7,49 @@ from .utils import cleanSymbols, get_un_document_urls, find_paragraphs_with_merg
                         find_similar_paragraph_in_target, askLLM_term_equivalents, getEquivalents_from_response, consolidate_results
 from .askTermBases import queryUNTerm, consolidate_UNTermResults, report_missing_translations
 
+from lingua import Language, LanguageDetectorBuilder
+
+# Initialize language detector with all UN languages
+LANGUAGE_MAP = {
+    Language.ENGLISH: "en",
+    Language.FRENCH: "fr", 
+    Language.SPANISH: "es", 
+    Language.CHINESE: "zh", 
+    Language.RUSSIAN: "ru", 
+    Language.ARABIC: "ar", 
+    Language.PORTUGUESE: "pt",
+    Language.SWAHILI: "sw"
+}
+
+# Create a detector instance
+detector = LanguageDetectorBuilder.from_languages(*LANGUAGE_MAP.keys()).build()
+
+def detect_language(text):
+    """
+    Detects the language of the given text using lingua language detector.
+    
+    Args:
+        text (str): Text to detect language of
+        
+    Returns:
+        str: ISO 639-1 language code (lowercase)
+    """
+    try:
+        # Ensure text is not too short for accurate detection
+        if not text or len(text.strip()) < 20:
+            return "unknown"
+            
+        # Detect language
+        detected_language = detector.detect_language_of(text)
+        
+        # Return the ISO code if detected, otherwise "unknown"
+        if detected_language:
+            return LANGUAGE_MAP.get(detected_language, "unknown")
+        return "unknown"
+    except Exception as e:
+        print(f"Language detection failed: {e}")
+        return "unknown"
+
 def sanitize_filename(filename):
     # Replace any character that is not alphanumeric, underscore, or hyphen with an underscore
     sanitized = re.sub(r'[^\w\-_\.]', '_', filename)
@@ -15,9 +58,15 @@ def sanitize_filename(filename):
 
 def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts, localLM=False):
     UNEP_LANGUAGES = {"English": "en", "French": "fr", "Spanish": "es", "Chinese": "zh", "Russian": "ru", "Arabic": "ar", "Portuguese": "pt", "Swahili": "sw"}
+    # Reverse mapping for language code to name
+    LANG_CODES_TO_NAME = {v: k for k, v in UNEP_LANGUAGES.items()}
 
-    metadataCleaned = []
-
+    # Initialize a variable to track if we need more documents
+    need_more_docs = True
+    max_docs_to_fetch = max(10, sourcesQuantity * 3)  # Fetch more documents than requested initially
+    max_docs_to_fetch = min(50, max_docs_to_fetch)  # Limit to 50 documents initially
+    processed_docs = 0
+    
     # Standardize languages
     if input_lang == "ALL":
         input_lang = list(UNEP_LANGUAGES.keys())
@@ -46,12 +95,21 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                 ""
             )
 
+    # Initialize a list to collect all metadata
+    all_metadata = []
+    
+    # First, fetch all potential metadata from the UN Library search
     if html_output:
-        metadata = extract_metadata_UNLib(html_output)  # list
-        print(metadata)
-        if metadata:
-            metadataCleaned = cleanSymbols(metadata, removeDrafts=eraseDrafts, maxResults=sourcesQuantity)
-            print(metadataCleaned)
+        # Extract all metadata without limiting initially
+        all_metadata = extract_metadata_UNLib(html_output)
+        print(f"Found {len(all_metadata)} potential documents")
+
+    # Only clean the symbols, but don't limit yet (set a high maxResults)
+    if all_metadata:
+        metadataCleaned = cleanSymbols(all_metadata, removeDrafts=eraseDrafts, maxResults=max_docs_to_fetch)
+        print(f"After cleaning, {len(metadataCleaned)} documents remain for processing")
+    else:
+        metadataCleaned = []
 
     # Initialize missing keys with None
     if metadataCleaned:
@@ -60,8 +118,29 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
             for key in all_keys:
                 resultItem.setdefault(key, None)
 
-    # Get UN Docs URL for each result docSymbol
-    for resultItem in metadataCleaned:
+    # Initialize a dictionary to track paragraphs found for each language
+    lang_paragraphs = {lang: [] for lang in input_lang if lang != "English"}
+    
+    # Initialize a dictionary to store English paragraphs for each document
+    doc_english_paragraphs = {}
+    
+    # Initialize a list to store processed results
+    processed_results = []
+    
+    # Process each document until we have enough paragraphs for all languages
+    # or until we've processed the specified number of documents
+    for i, resultItem in enumerate(metadataCleaned):
+        # Check if we've processed enough documents and have paragraphs for all languages
+        if processed_docs >= sourcesQuantity:
+            all_languages_have_paragraphs = all(len(paras) > 0 for lang, paras in lang_paragraphs.items())
+            if all_languages_have_paragraphs:
+                print(f"Processed {processed_docs} documents and found paragraphs for all languages")
+                break
+                
+        # Track that we're processing this document
+        processed_docs += 1
+        print(f"Processing document {processed_docs}/{len(metadataCleaned)}: {resultItem.get('docSymbol', 'Unknown')}")
+        
         resultItem["EnglishTerm"] = input_search_text
         resultItem["docURLs"] = get_un_document_urls(resultItem["docSymbol"])  # dict
 
@@ -69,15 +148,39 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
         print(f"Processing files for {resultItem['docURLs']['English']}...")
         englishMD = convert_pdf_to_markdown(resultItem["docURLs"]["English"])
         print("Finding paragraphs...")
-        englishParagraphs = find_paragraphs_with_merge(englishMD, input_search_text, max_paragraphs=paragraphsPerDoc)
-        if englishParagraphs:
-            resultItem["EnglishParagraphs"] = englishParagraphs  # list
-            print("\n\nEnglish Paragraphs:")
-            print(resultItem)
+        # Get all matching paragraphs
+        all_english_paragraphs = find_paragraphs_with_merge(englishMD, input_search_text, max_paragraphs=None)
+        
+        if not all_english_paragraphs:
+            print(f"No English paragraphs found in document {resultItem['docSymbol']}, skipping...")
+            continue
+        
+        # Store all English paragraphs for this document
+        doc_english_paragraphs[resultItem['docSymbol']] = all_english_paragraphs
+        
+        # Only use the specified number for initial processing
+        englishParagraphs = all_english_paragraphs[:paragraphsPerDoc]
+        resultItem["EnglishParagraphs"] = englishParagraphs  # list
+        
+        # Only add to processed results if we found English paragraphs
+        found_target_paragraphs = False
+        
+        # Get the list of languages that still need paragraphs
+        languages_to_process = [lang for lang in input_lang if lang != "English" and len(lang_paragraphs[lang]) < paragraphsPerDoc]
+        
+        # If we already have paragraphs for all languages, we can stop
+        if not languages_to_process:
+            print("Already found enough paragraphs for all languages")
+            break
+            
+        print(f"Need to find paragraphs for: {', '.join(languages_to_process)}")
 
-            # Other languages
-            for targetLang in input_lang:
-                print(f"Processing language: {targetLang}")
+        # For each language that still needs more paragraphs
+        for targetLang in languages_to_process:
+            print(f"Processing language: {targetLang}")
+            target_lang_code = UNEP_LANGUAGES.get(targetLang, "")
+            
+            try:
                 langMD = convert_pdf_to_markdown(resultItem["docURLs"][targetLang])
                 
                 # Ensure the directory exists before saving the file
@@ -92,30 +195,88 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                 with open(output_file_path, "w") as f:
                     f.write(langMD)
 
-                targetParagraphs = []
+                # Try to find matching paragraphs for each English paragraph
+                processed_eng_paragraphs = []
+                new_target_paragraphs = []
+                
                 for engPara in englishParagraphs:
-                    partialParagraphs = find_similar_paragraph_in_target(engPara, langMD, model_name='distiluse-base-multilingual-cased-v2', top_k=1)
-                    if partialParagraphs:
-                        targetParagraphs.extend(partialParagraphs)
-
-                if targetParagraphs:
-                    print(f"Found target paragraphs: {targetParagraphs}")
+                    if len(new_target_paragraphs) >= paragraphsPerDoc:
+                        break
+                        
+                    processed_eng_paragraphs.append(engPara)
+                    # Get top 3 similar paragraphs to have alternatives
+                    similar_paragraphs = find_similar_paragraph_in_target(engPara, langMD, 
+                                                                        model_name='distiluse-base-multilingual-cased-v2', 
+                                                                        top_k=2)
+                    
+                    if similar_paragraphs:
+                        found_target_lang_para = False
+                        
+                        for para in similar_paragraphs:
+                            detected_lang = detect_language(para[0])
+                            # Check if paragraph is in the target language
+                            if detected_lang == target_lang_code:
+                                new_target_paragraphs.append(para[0])
+                                found_target_lang_para = True
+                                break
+                                
+                            # As a fallback, if language detection is uncertain but the paragraph isn't English
+                            elif detected_lang != 'en' and detected_lang != 'unknown':
+                                print(f"Found paragraph in language {detected_lang}, accepting as {targetLang}")
+                                new_target_paragraphs.append(para[0])
+                                found_target_lang_para = True
+                                break
+                
+                # If we don't have enough target paragraphs, try with additional English paragraphs
+                if len(new_target_paragraphs) < paragraphsPerDoc and len(all_english_paragraphs) > len(processed_eng_paragraphs):
+                    remaining_eng_paragraphs = [p for p in all_english_paragraphs if p not in processed_eng_paragraphs]
+                    
+                    for engPara in remaining_eng_paragraphs:
+                        if len(new_target_paragraphs) >= paragraphsPerDoc:
+                            break
+                            
+                        similar_paragraphs = find_similar_paragraph_in_target(engPara, langMD, 
+                                                                            model_name='distiluse-base-multilingual-cased-v2', 
+                                                                            top_k=2)
+                        
+                        if similar_paragraphs:
+                            for para in similar_paragraphs:
+                                detected_lang = detect_language(para[0])
+                                if detected_lang == target_lang_code:
+                                    new_target_paragraphs.append(para[0])
+                                    break
+                                # Same fallback as above
+                                elif detected_lang != 'en' and detected_lang != 'unknown':
+                                    new_target_paragraphs.append(para[0])
+                                    break
+                            
+                            if len(new_target_paragraphs) >= paragraphsPerDoc:
+                                break
+                
+                # Add the new target paragraphs to our collection for this language
+                if new_target_paragraphs:
+                    found_target_paragraphs = True
+                    lang_paragraphs[targetLang].extend(new_target_paragraphs)
+                    print(f"Found {len(new_target_paragraphs)} new paragraphs for {targetLang}, total now: {len(lang_paragraphs[targetLang])}")
+                    
+                    # Store target paragraphs in resultItem
                     tParaColName = targetLang + 'Paragraphs'
-                    resultItem[tParaColName] = targetParagraphs  # list
-
-
-                    # Initialize targetTerm and targetSynonyms
+                    resultItem[tParaColName] = new_target_paragraphs
+                    
+                    # Initialize targetTerm and targetSynonyms if we found paragraphs
                     targetTermColName = targetLang + 'Term'
                     targetSynonymsColName = targetLang + 'Synonyms'
                     resultItem[targetTermColName] = None
                     resultItem[targetSynonymsColName] = None
-
+                    
                     # Extract bilingual terms as LLM string answer
                     if localLM == None:
                         targetTerms = []
                     
                     elif localLM == False or localLM==True:
-                        targetTerms = askLLM_term_equivalents(input_search_text, englishParagraphs, targetParagraphs, "English", targetLang, customInference=localLM)
+                        # Use only as many English paragraphs as we have target paragraphs
+                        englishParasToUse = englishParagraphs[:len(new_target_paragraphs)]
+                        targetTerms = askLLM_term_equivalents(input_search_text, englishParasToUse, new_target_paragraphs, "English", targetLang, customInference=localLM)
                         print(targetTerms)
 
                         targetTerms = getEquivalents_from_response(targetTerms)  # list of str
@@ -126,17 +287,38 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                             # Save the targetTerm in metadata w/ its related
                             resultItem[targetTermColName] = targetTerms[0]
                             resultItem[targetSynonymsColName] = targetTerms[1:]
-
-    # Create Polars dataframe
-    if metadataCleaned:
+                else:
+                    print(f"No target paragraphs found for {targetLang} in document {resultItem['docSymbol']}")
+            
+            except Exception as e:
+                print(f"Error processing {targetLang} document for {resultItem['docSymbol']}: {e}")
+        
+        # If we found any target paragraphs in this document, add it to our results
+        if found_target_paragraphs:
+            processed_results.append(resultItem)
+            
+            # If we have enough results and found at least one paragraph for each language
+            if len(processed_results) >= sourcesQuantity:
+                all_languages_have_paragraphs = all(len(paras) > 0 for lang, paras in lang_paragraphs.items())
+                if all_languages_have_paragraphs:
+                    print(f"Found paragraphs for all languages after processing {processed_docs} documents")
+                    break
+    
+    # Log the language paragraph counts
+    print("\n--- Language paragraph counts ---")
+    for lang, paras in lang_paragraphs.items():
+        print(f"{lang}: {len(paras)} paragraphs")
+    
+    # Return the processed results, or an empty list if none
+    if processed_results:
+        # Create Polars dataframe with the successfully processed results
         try:
-            df = pl.DataFrame(metadataCleaned, strict=False)
+            df = pl.DataFrame(processed_results, strict=False)
             print(df)
         except Exception as e:
             print(f"Error creating Polars dataframe: {e}")
-            # Continue execution even if there's an error
-
-    return metadataCleaned
+    
+    return processed_results if processed_results else []
 
 def getTermsAndCandidates(input_search_text, lang_to_search="ALL", input_filterSymbols=["UNEP", "FCCC", "S"], 
                           sourcesQuantity=3, paragraphsPerDoc=2, eraseDrafts=True):

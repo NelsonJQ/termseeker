@@ -123,3 +123,6 @@ cython_debug/
 testNoLM.xlsx
 log_first200.txt
 terminology_data.json
+test320-620UNEAonly.xlsx
+test200-320UNEAonly.xlsx
+~$test320-620UNEAonly.xlsx
