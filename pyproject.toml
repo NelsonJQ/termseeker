@@ -3,8 +3,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "termun"
-version = "0.1.0"
+name = "termseeker"
+version = "0.1.1"
 description = "UN Terminology checker and corrector for parallel texts"
 readme = "README.md"
 requires-python = ">=3.6"
@@ -33,7 +33,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/NelsonJQ/termun"
+"Homepage" = "https://github.com/NelsonJQ/termseeker"
 
 [project.scripts]
-termun-cli = "termun.termun.__main__:getterms"
+termseeker-cli = "termseeker.termseeker.__main__:getterms"

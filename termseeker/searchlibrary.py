@@ -1,5 +1,5 @@
 """
-UN Library functions for TermUN
+UN Library functions for TermSeeker
 
 This module provides functions for:
 - Accessing the UN Digital Library for document retrieval

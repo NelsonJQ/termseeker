@@ -1,5 +1,5 @@
 """
-Utility functions for TermUN
+Utility functions for TermSeeker
 
 This module provides various utility functions including:
 - Document symbol cleaning and filtering
@@ -434,6 +434,7 @@ def lmstudioLocalAPI(prompt, url='http://localhost:1234/v1'):
 
     # Return the chatbot's response
     return completion.choices[0].message.content
+
 
 def getEquivalents_from_response(response) -> list:
     """

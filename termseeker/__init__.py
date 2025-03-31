@@ -1,5 +1,5 @@
 """
-TermHunter: A tool for assisting terminology tasks by searching the UN official documents.
+TermSeeker: A tool for assisting terminology tasks by searching the UN official documents.
 
 This package provides functionality for:
 - Accessing the UN Digital Library for document retrieval and metadata extraction
@@ -17,7 +17,7 @@ from .searchlibrary import access_un_library_by_term_and_symbol, adv_search_un_l
 from .utils import find_similar_paragraph_in_target, askLLM_term_equivalents, consolidate_results
 from .askTermBases import queryUNTerm, consolidate_UNTermResults, report_missing_translations
 
-# Define what gets imported with "from termun import *"
+# Define what gets imported with "from termseeker import *"
 __all__ = [
     'getCandidates',
     'convert_pdf_to_markdown',

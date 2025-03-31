@@ -1,6 +1,6 @@
 # Project Overview
 
-TermHunter is a Python application designed to facilitate the terminology work by searching for candidate terms in UN languages in official UN documents. The application uses the UN Digital Library search results in one or multiple languages (Arabic, Spanish, French, Russian, Chinese).
+TermSeeker is a Python application designed to facilitate the terminology work by searching for candidate terms in UN languages in official UN documents. The application uses the UN Digital Library search results in one or multiple languages (Arabic, Spanish, French, Russian, Chinese).
 
 ## Features
 
@@ -12,17 +12,17 @@ TermHunter is a Python application designed to facilitate the terminology work b
 
 ## Google Colab
 
-You can test the installation and execution of the `termun` library using Google Colab. Click the link below to open the notebook:
+You can test the installation and execution of the `termseeker` library using Google Colab. Click the link below to open the notebook:
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NelsonJQ/termun/blob/main/playground_termHunter.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NelsonJQ/termseeker/blob/main/playground_termseeker.ipynb)
 
 ## Installation
 
 To set up the project, clone the repository and install the required dependencies:
 
 ```bash
-git clone https://github.com/NelsonJQ/termun.git
-cd termun
+git clone https://github.com/NelsonJQ/termseeker.git
+cd termseeker
 pip install .
 ```
 
@@ -50,7 +50,7 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
 #### Example Usage
 
 ```python
-from termun.getcandidates import getCandidates
+from termseeker.getcandidates import getCandidates
 
 input_search_text = "10-Year Framework of Programmes on Sustainable Consumption and Production Patterns"
 input_lang = ["Spanish", "French"]
@@ -81,7 +81,7 @@ def consolidate_results(metadataCleaned, exportExcel=False) -> list:
 #### Example Usage
 
 ```python
-from termun.utils import consolidate_results
+from termseeker.utils import consolidate_results
 
 # Assuming `results` is the output from getCandidates()
 consolidated_results = consolidate_results(results, exportExcel=True)
@@ -111,7 +111,7 @@ The `askLLM_term_equivalents` function can use either a local inference server (
 #### Example Usage
 
 ```python
-from termun.utils import askLLM_term_equivalents
+from termseeker.utils import askLLM_term_equivalents
 
 # Using DDGS
 response = askLLM_term_equivalents(

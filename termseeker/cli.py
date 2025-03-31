@@ -2,7 +2,7 @@ import argparse
 from .getcandidates import getCandidates
 
 def main_cli():
-    """Command-line interface for TermUN"""
+    """Command-line interface for TermSeeker"""
     parser = argparse.ArgumentParser(description='UN Terminology checker and corrector for parallel texts')
     
     parser.add_argument('--search', type=str, help='Search text to find terminology for')
