@@ -69,8 +69,10 @@ instance/
 docs/_build/
 
 # Jupyter Notebook
-*.ipynb
+UN_Term_scraping_(WIP).ipynb
 playgroundprivate.ipynb
+file.ipynb
+*.ipynb_checkpoints
 
 # IPython
 profile_default/
