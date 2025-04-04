@@ -1,6 +1,10 @@
 import argparse
 from .getcandidates import getCandidates
 
+#########################################
+# CLI not tested yet, just a placeholder
+#########################################
+
 def main_cli():
     """Command-line interface for TermSeeker"""
     parser = argparse.ArgumentParser(description='UN Terminology checker and corrector for parallel texts')

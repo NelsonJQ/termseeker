@@ -16,6 +16,7 @@ from .convert import convert_pdf_to_markdown
 from .searchlibrary import access_un_library_by_term_and_symbol, adv_search_un_library, extract_metadata_UNLib
 from .utils import find_similar_paragraph_in_target, askLLM_term_equivalents, consolidate_results
 from .askTermBases import queryUNTerm, consolidate_UNTermResults, report_missing_translations
+from .queryHFdatasets import query_dataset_by_term_and_symbol, HUGGINGFACE_TOKEN
 
 # Define what gets imported with "from termseeker import *"
 __all__ = [
@@ -30,5 +31,6 @@ __all__ = [
     'queryUNTerm',
     'consolidate_UNTermResults',
     'report_missing_translations',
-    'getTermsAndCandidates'
+    'getTermsAndCandidates',
+    'query_dataset_by_term_and_symbol'
 ]

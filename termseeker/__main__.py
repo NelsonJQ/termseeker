@@ -6,6 +6,10 @@ from .utils import cleanSymbols, get_un_document_urls, find_paragraphs_with_merg
                         find_similar_paragraph_in_target, askLLM_term_equivalents, getEquivalents_from_response
 from .getcandidates import getCandidates
 
+#########################################
+# Main function not tested, just a placeholder
+#########################################
+
 def getterms():
     parser = argparse.ArgumentParser(description='UN Terminology checker and corrector for parallel texts')
     
