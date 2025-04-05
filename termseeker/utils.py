@@ -464,7 +464,10 @@ def askGroqAPI(sourceTerm, target_paragraphs, TargetLanguage, token, sourceLangu
     import json
     # Initialize OpenAI client with local endpoint
     #client = OpenAI(base_url=url, api_key="lm-studio")
-    client = Groq(api_key=token)
+    os.environ["GROQ_API_KEY"] = token
+    client = Groq(
+        api_key=os.environ.get("GROQ_API_KEY")
+        )
     
     # Create the prompt as a nested dictionary (will be converted to JSON)
     if len(str(target_paragraphs)) > 5000:
