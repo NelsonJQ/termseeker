@@ -507,8 +507,6 @@ def askGroqAPI(sourceTerm, target_paragraphs, TargetLanguage, token, sourceLangu
         }
     }
 
-    # Prepare context information for each language
-    contexts = contexts or {}
     
     # Convert to JSON string for the prompt
     prompt_json = json.dumps(prompt_data, ensure_ascii=False, indent=2)
@@ -565,7 +563,7 @@ def getEquivalents_from_response(response) -> list:
     pattern = r'<equivalent>(.*?)</equivalent>'
     matches = re.findall(pattern, response, re.DOTALL)
 
-    return matches if matches else response
+    return matches if matches else [response]
 
 def consolidate_results(metadataCleaned, exportExcel=False) -> list:
     """

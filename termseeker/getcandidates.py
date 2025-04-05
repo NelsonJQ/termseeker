@@ -275,7 +275,12 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                                                               customInference=localLM, groqToken=groqToken)
                         print(targetTerms)
 
-                        targetTerms = getEquivalents_from_response(targetTerms)  # list of str
+                        if "Error" in targetTerms:
+                            print(f"Error in LLM response: {targetTerms['Error']}")
+                            targetTerms = []
+                        elif len(groqToken)>7 or groqToken == None:
+                            targetTerms = getEquivalents_from_response(targetTerms)  # list of str
+                        
                         if targetTerms:
                             # Unique values of list
                             targetTerms = list(set(targetTerms))
