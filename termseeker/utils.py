@@ -396,10 +396,10 @@ def askLLM_term_equivalents(source_term, source_paragraphs, target_paragraphs, s
                 return response
             except Exception as e:
                 return f"Error extracting term equivalents with DDGS-chat after local API failed: {str(e)}"
-    elif len(groqToken)>7:
+    elif len(str(groqToken))>7:
         # Use Groq API if token is provided
         try:
-            response = askGroqAPI(source_term, target_paragraphs, target_language, source_language, token=groqToken)
+            response = askGroqAPI(source_term, target_paragraphs, target_language, source_language, groqToken)
             return response
         except Exception as e:
             return f"Error extracting term equivalents with Groq API: {str(e)}"
