@@ -9,3 +9,5 @@ sentence-transformers
 scikit-learn
 duckduckgo-search
 xlsxwriter
+huggingface-hub
+datasets

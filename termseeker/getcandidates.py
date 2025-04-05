@@ -56,7 +56,7 @@ def sanitize_filename(filename):
     return sanitized
 
 
-def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts, localLM=False):
+def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts, localLM=False, groqToken=None):
     UNEP_LANGUAGES = {"English": "en", "French": "fr", "Spanish": "es", "Chinese": "zh", "Russian": "ru", "Arabic": "ar", "Portuguese": "pt", "Swahili": "sw"}
     # Reverse mapping for language code to name
     LANG_CODES_TO_NAME = {v: k for k, v in UNEP_LANGUAGES.items()}
@@ -261,13 +261,18 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                     resultItem[targetSynonymsColName] = None
                     
                     # Extract bilingual terms as LLM string answer
+                    englishParasToUse = englishParagraphs[:len(new_target_paragraphs)]
+
                     if localLM == None:
                         targetTerms = []
                     
                     elif localLM == False or localLM==True:
                         # Use only as many English paragraphs as we have target paragraphs
-                        englishParasToUse = englishParagraphs[:len(new_target_paragraphs)]
-                        targetTerms = askLLM_term_equivalents(input_search_text, englishParasToUse, new_target_paragraphs, "English", targetLang, customInference=localLM)
+                        
+                        targetTerms = askLLM_term_equivalents(input_search_text, englishParasToUse,
+                                                              new_target_paragraphs, "English",
+                                                              targetLang,
+                                                              customInference=localLM, groqToken=groqToken)
                         print(targetTerms)
 
                         targetTerms = getEquivalents_from_response(targetTerms)  # list of str

@@ -1,16 +1,17 @@
 import os
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-
 import time
 from bs4 import BeautifulSoup
 
 
 def queryUNTerm(TEXT_TO_SEARCH):
+
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.common.keys import Keys
+
     # Create a new directory for the user data
     user_data_dir = "/tmp/chrome_user_data"
     os.makedirs(user_data_dir, exist_ok=True)
@@ -339,6 +340,12 @@ def queryFAOTerm(TEXT_TO_SEARCH):
     Raises:
         Exception: If an error occurs during the web scraping process.
     """
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.common.keys import Keys
+    
     # Create a new directory for the user data
     user_data_dir = "/tmp/chrome_user_data"
     os.makedirs(user_data_dir, exist_ok=True)

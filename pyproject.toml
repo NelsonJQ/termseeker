@@ -19,17 +19,20 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "python-docx",
+    "sentence-transformers",
     "pymupdf4llm",
     "requests",
     "beautifulsoup4",
     "html2text",
     "markdown2",
-    "sentence-transformers",
     "scikit-learn",
     "duckduckgo-search",
     "polars",
-    "xlsxwriter"
+    "xlsxwriter",
+    "lingua-language-detector",
+    "datasets",
+    "huggingface-hub",
+    "selenium"
 ]
 
 [project.urls]

@@ -1,8 +1,7 @@
 #!pip install polars datasets huggingface_hub
 
 import polars as pl
-from datasets import load_dataset
-from huggingface_hub import login, whoami
+
 
 global HUGGINGFACE_TOKEN
 HUGGINGFACE_TOKEN = ""  # Set your Hugging Face token here if needed
@@ -24,6 +23,8 @@ def query_dataset_by_term_and_symbol(HFdatasetName, input_term, input_symbol, tg
         - For other datasets, slashes in the symbol are replaced with underscores, and the symbol is matched against the "record" column.
     """
     # Try to login to Hugging Face if a token is provided
+    from datasets import load_dataset
+    from huggingface_hub import login, whoami
     if hf_token:
         try:
             from huggingface_hub import login

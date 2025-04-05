@@ -334,7 +334,7 @@ def find_similar_paragraph_in_target(source_paragraph, target_text, model_name='
 
     return results
 
-def askLLM_term_equivalents(source_term, source_paragraphs, target_paragraphs, source_language, target_language, customInference=False) -> str:
+def askLLM_term_equivalents(source_term, source_paragraphs, target_paragraphs, source_language, target_language, customInference=False, groqToken=None) -> str:
     """
     Query a LLM to extract term equivalents across languages. By default the LLM is claude-haiku from the free service provided by DuckDuckGo.
     For custom inference, set customInference=True and provide a local server URL for LM-Studio.
@@ -396,6 +396,13 @@ def askLLM_term_equivalents(source_term, source_paragraphs, target_paragraphs, s
                 return response
             except Exception as e:
                 return f"Error extracting term equivalents with DDGS-chat after local API failed: {str(e)}"
+    elif len(groqToken)>7:
+        # Use Groq API if token is provided
+        try:
+            response = askGroqAPI(source_term, target_paragraphs, target_language, source_language, token=groqToken)
+            return response
+        except Exception as e:
+            return f"Error extracting term equivalents with Groq API: {str(e)}"
     else:
         # Use DDGS directly
         try:
@@ -435,6 +442,114 @@ def lmstudioLocalAPI(prompt, url='http://localhost:1234/v1'):
     # Return the chatbot's response
     return completion.choices[0].message.content
 
+def askGroqAPI(sourceTerm, target_paragraphs, TargetLanguage, token, sourceLanguage="English"):
+    """
+    Generate translations of a source term into multiple languages using local LLM API with structured JSON output.
+    
+    Args:
+        sourceTerm (str): The term to translate
+        sourceLanguage (str): The language of the source term (default: "English")
+        contexts (dict): Dictionary containing context for each target language with format:
+                        {
+                            "ES": {"context": str, "similar": str, "synonyms": list},
+                            "FR": {"context": str, "similar": str, "synonyms": list},
+                            ...
+                        }
+        url (str): The base URL of the local language model API (default: 'http://localhost:1234/v1')
+    
+    Returns:
+        dict: JSON response with translations in multiple languages
+    """
+    from Groq import Groq
+    import json
+    # Initialize OpenAI client with local endpoint
+    #client = OpenAI(base_url=url, api_key="lm-studio")
+    client = Groq(api_key=token)
+    
+    # Create the prompt as a nested dictionary (will be converted to JSON)
+    if len(str(target_paragraphs)) > 5000:
+        target_paragraphs = str(target_paragraphs)[:5000]
+
+    prompt_data = {
+        "sourceTerm": sourceTerm,
+        "sourceLanguage": sourceLanguage,
+        "Context": target_paragraphs,
+        "outputFormat": "JSON",
+        "outputStyle": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "translations",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "terms": {
+                            "type": "object",
+                            "properties": {
+                                sourceLanguage: {
+                                    "type": "string",
+                                    "description": f"The original {sourceLanguage} term being translated",
+                                    "enum": [sourceTerm]  # This restricts it to exactly the sourceTerm value
+                                },
+                                TargetLanguage: {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "minItems": 1,
+                                    "maxItems": 4,
+                                    "description": f"List of {TargetLanguage} translations for the term '{sourceTerm}' based on the context provided"
+                                }
+                            },
+                            "required": [sourceLanguage, TargetLanguage]
+                        }
+                    },
+                    "required": ["terms"]
+                }
+            }
+        }
+    }
+
+    # Prepare context information for each language
+    contexts = contexts or {}
+    
+    # Convert to JSON string for the prompt
+    prompt_json = json.dumps(prompt_data, ensure_ascii=False, indent=2)
+    
+    # Define the response format for structured output
+    response_format = {
+        "type": "json_object",
+        "json_object": {
+            "name": "translations",
+            "schema": prompt_data["outputStyle"]["json_schema"]["schema"]
+        }
+    }
+    
+    try:
+        
+        final_prompt = f"Suggest a translation for <sourceterm>{sourceTerm}</sourceterm> in <targetlanguages>Russian, Spanish, Arabic, French, Simplified Chinese</targetlanguages> based on mentions of contextual documents and synonyms here below. Do not provide similar terms but the proper translation of source English string." + prompt_json
+        # Create a chat completion
+        completion = client.chat.completions.create(
+            #model="model-identifier",  # not essential for LM Studio
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "You are a helpful multilingual assistant that understands English, French, Simplified Chinese, Arabic, Russian and Spanish. You suggest accurate translations of a single input term based on provided context."},
+                {"role": "user", "content": final_prompt}
+            ],
+            temperature=0.05,
+            response_format=response_format,
+            max_completion_tokens=2230,
+            stream=False,
+            stop=None,
+            top_p=1
+        )
+        
+
+        # Parse the response as JSON
+        #response_content = completion.choices[0].message.content
+        response_content = completion.choices[0].message.content
+        
+        return json.loads(response_content) or response_content
+    except Exception as e:
+        return f"Error extracting term equivalents with Groq API: {str(e)}"
+
 
 def getEquivalents_from_response(response) -> list:
     """
@@ -450,7 +565,7 @@ def getEquivalents_from_response(response) -> list:
     pattern = r'<equivalent>(.*?)</equivalent>'
     matches = re.findall(pattern, response, re.DOTALL)
 
-    return matches
+    return matches if matches else response
 
 def consolidate_results(metadataCleaned, exportExcel=False) -> list:
     """
