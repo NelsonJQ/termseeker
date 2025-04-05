@@ -522,16 +522,16 @@ def askGroqAPI(sourceTerm, target_paragraphs, TargetLanguage, token, sourceLangu
     
     try:
         
-        final_prompt = f"Suggest a translation for <sourceterm>{sourceTerm}</sourceterm> in <targetlanguages>Russian, Spanish, Arabic, French, Simplified Chinese</targetlanguages> based on mentions of contextual documents and synonyms here below. Do not provide similar terms but the proper translation of source English string." + prompt_json
+        final_prompt = f"Extract the translation of <sourceterm>{sourceTerm}</sourceterm> in <targetlanguages>{TargetLanguage}</targetlanguages> language from the mentions in the provided Context." + prompt_json
         # Create a chat completion
         completion = client.chat.completions.create(
             #model="model-identifier",  # not essential for LM Studio
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": "You are a helpful multilingual assistant that understands English, French, Simplified Chinese, Arabic, Russian and Spanish. You suggest accurate translations of a single input term based on provided context."},
+                {"role": "system", "content": "You are a helpful multilingual assistant that understands English, French, Simplified Chinese, Arabic, Russian and Spanish. You extract accurate translations of a single input term from the provided context. Modify the extracted term to fit the gender and number of the input term."},
                 {"role": "user", "content": final_prompt}
             ],
-            temperature=0.05,
+            temperature=0.3,
             response_format=response_format,
             max_completion_tokens=2230,
             stream=False,
@@ -541,7 +541,7 @@ def askGroqAPI(sourceTerm, target_paragraphs, TargetLanguage, token, sourceLangu
         
 
         # Parse the response as JSON
-        #response_content = completion.choices[0].message.content
+        #response_content = completion.choices[0].message
         response_content = completion.choices[0].message.content
         
         return json.loads(response_content) or response_content
@@ -559,11 +559,23 @@ def getEquivalents_from_response(response) -> list:
     Returns:
         List of extracted equivalent terms
     """
-    # Use regex to find all occurrences of text between <EQUIVALENTTERM> and </EQUIVALENTTERM>
-    pattern = r'<equivalent>(.*?)</equivalent>'
-    matches = re.findall(pattern, response, re.DOTALL)
+    try:
+        # If response is a dict, extract the key that is not "English"
+        if isinstance(response, dict):
+            matches = []
+            # Find the key that is not "English"
+            for key in response['terms']:
+                if key != 'English':
+                    matches.extend(response['terms'][key])
+            return matches if matches else [response]
+        # Use regex to find all occurrences of text between <EQUIVALENTTERM> and </EQUIVALENTTERM>
+        pattern = r'<equivalent>(.*?)</equivalent>'
+        matches = re.findall(pattern, response, re.DOTALL)
 
-    return matches if matches else [response]
+        return matches if matches else [response]
+    except Exception as e:
+        print(f"Error extracting equivalents from response: {str(e)}")
+        return [response]
 
 def consolidate_results(metadataCleaned, exportExcel=False) -> list:
     """
