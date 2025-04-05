@@ -460,7 +460,7 @@ def askGroqAPI(sourceTerm, target_paragraphs, TargetLanguage, token, sourceLangu
     Returns:
         dict: JSON response with translations in multiple languages
     """
-    from Groq import Groq
+    from groq import Groq
     import json
     # Initialize OpenAI client with local endpoint
     #client = OpenAI(base_url=url, api_key="lm-studio")
