@@ -35,7 +35,11 @@ The `getCandidates()` function is the core function of this application. It sear
 #### Function Signature
 
 ```python
-def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts):
+def getCandidates(input_search_text, input_lang,
+                input_filterSymbols, sourcesQuantity,
+                paragraphsPerDoc, eraseDrafts,
+                localLM=False, groqToken=None
+                ):
 ```
 
 #### Parameters
@@ -46,6 +50,8 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
 - `sourcesQuantity` (int): Number of sources to retrieve.
 - `paragraphsPerDoc` (int): Paragraphs per document.
 - `eraseDrafts` (bool): Whether to erase draft documents.
+- `localLM` (bool): Whether to use LM Studio for local inference server (Ollama) (Optional, set it as None to skip term extraction by any local or cloud LLM)
+- `groqToken` (str): API key for Groq cloud inference server (70b model) (Optional)
 
 #### Example Usage
 
@@ -70,12 +76,12 @@ The `consolidate_results()` function from `utils.py` consolidates the results ob
 #### Function Signature
 
 ```python
-def consolidate_results(metadataCleaned, exportExcel=False) -> list:
+def consolidate_results(result, exportExcel=False) -> list:
 ```
 
 #### Parameters
 
-- `metadataCleaned` (list): List of dictionaries containing the cleaned metadata.
+- `result` (list): List of dictionaries containing the cleaned metadata (output from `getCandidates()`).
 - `exportExcel` (bool): Whether to export the consolidated results as an Excel file.
 
 #### Example Usage
@@ -142,4 +148,4 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for more details.
+This project is licensed under the MIT License and requires permission from UN Digital Library. See the LICENSE file for more details.

@@ -466,10 +466,7 @@ def askGroqAPI(sourceTerm, target_paragraphs, TargetLanguage, token, sourceLangu
         dict: JSON response with translations in multiple languages
     """
     
-    # Initialize OpenAI client with local endpoint
-    #client = OpenAI(base_url=url, api_key="lm-studio")
-    #os.environ["GROQ_API_KEY"] = token
-    #print(os.environ.get('GROQ_API_KEY')) 
+    # Initialize the Groq client with the provided token
     client = Groq(
         #api_key=os.environ.get("GROQ_API_KEY")
         api_key=token,

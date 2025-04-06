@@ -57,6 +57,26 @@ def sanitize_filename(filename):
 
 
 def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts, localLM=False, groqToken=None):
+    """
+    getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQuantity, paragraphsPerDoc, eraseDrafts, localLM=False, groqToken=None)
+    Fetches and processes candidate documents and paragraphs from the UN Library based on the input search text, language, and other parameters.
+    Parameters:
+        input_search_text (str): The search term to look for in the documents.
+        input_lang (str or list): The target language(s) for the search. Can be a single language (e.g., "English") or a list of languages. Use "ALL" to include all supported languages.
+        input_filterSymbols (list): A list of document symbols to filter the search. If empty, a general term search is performed.
+        sourcesQuantity (int): The number of documents to process.
+        paragraphsPerDoc (int): The number of paragraphs to extract per document for each language.
+        eraseDrafts (bool): Whether to exclude draft documents from the results.
+        localLM (bool, optional): If True, uses a local language model for processing. If False, uses a remote language model. Defaults to False.
+        groqToken (str, optional): Token for accessing the remote language model, if applicable. Defaults to None.
+    Returns:
+        list: A list of processed results, where each result is a dictionary containing metadata and extracted paragraphs for the specified languages. Returns an empty list if no results are found.
+    Notes:
+        - The function processes documents iteratively until the required number of paragraphs for all target languages is found or the specified number of documents is processed.
+        - Extracted paragraphs are matched across languages using similarity models, and bilingual term equivalents are generated using a language model.
+        - If Polars is available, the processed results are converted into a Polars DataFrame for easier handling.
+        - Logs warnings if the required number of paragraphs for all languages is not met.
+    """
     UNEP_LANGUAGES = {"English": "en", "French": "fr", "Spanish": "es", "Chinese": "zh", "Russian": "ru", "Arabic": "ar", "Portuguese": "pt", "Swahili": "sw"}
     # Reverse mapping for language code to name
     LANG_CODES_TO_NAME = {v: k for k, v in UNEP_LANGUAGES.items()}
@@ -318,6 +338,9 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
     
     return processed_results if processed_results else []
 
+
+# This function is not working yet, but it is a placeholder for wrapping the getCandidates function
+# and adding the UNTERM query functionality.
 def getTermsAndCandidates(input_search_text, lang_to_search="ALL", input_filterSymbols=["UNEP", "FCCC", "S"], 
                           sourcesQuantity=3, paragraphsPerDoc=2, eraseDrafts=True):
     """
