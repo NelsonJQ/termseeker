@@ -146,7 +146,7 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
 
         # Process files
         print(f"Processing files for {resultItem['docURLs']['English']}...")
-        englishMD = convert_pdf_to_markdown(resultItem["docURLs"]["English"])
+        englishMD = convert_pdf_to_markdown(resultItem["docURLs"]["English"], "/content")
         print("Finding paragraphs...")
         # Get all matching paragraphs
         all_english_paragraphs = find_paragraphs_with_merge(englishMD, input_search_text, max_paragraphs=None)
@@ -181,20 +181,11 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
             target_lang_code = UNEP_LANGUAGES.get(targetLang, "")
             
             try:
-                langMD = convert_pdf_to_markdown(resultItem["docURLs"][targetLang])
                 
-                # Ensure the directory exists before saving the file
-                output_dir = "/content"
-                os.makedirs(output_dir, exist_ok=True)
-                
-                # Sanitize the docSymbol for use in the file name
                 sanitized_docSymbol = sanitize_filename(resultItem['docSymbol'])
-                
-                # Save langMD in text file
-                output_file_path = os.path.join(output_dir, f"{sanitized_docSymbol}_{targetLang}.txt")
-                with open(output_file_path, "w") as f:
-                    f.write(langMD)
-
+                output_file_path = os.path.join(f"{sanitized_docSymbol}_{targetLang}.txt")
+                langMD = convert_pdf_to_markdown(resultItem["docURLs"][targetLang], "/content", output_file_path)
+            
                 # Try to find matching paragraphs for each English paragraph
                 processed_eng_paragraphs = []
                 new_target_paragraphs = []
@@ -272,7 +263,7 @@ def getCandidates(input_search_text, input_lang, input_filterSymbols, sourcesQua
                         targetTerms = askLLM_term_equivalents(input_search_text, englishParasToUse,
                                                               new_target_paragraphs, "English",
                                                               targetLang,
-                                                              customInference=localLM, groqToken=groqToken)
+                                                              localLM, groqToken)
                         print(targetTerms)
 
                         if "Error" in targetTerms:

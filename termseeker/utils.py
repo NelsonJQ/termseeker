@@ -15,6 +15,8 @@ import numpy as np
 from duckduckgo_search import DDGS
 import polars as pl
 import os
+from groq import Groq
+import json
 
 # Global variable to store the model
 model = None
@@ -396,10 +398,13 @@ def askLLM_term_equivalents(source_term, source_paragraphs, target_paragraphs, s
                 return response
             except Exception as e:
                 return f"Error extracting term equivalents with DDGS-chat after local API failed: {str(e)}"
-    elif len(str(groqToken))>7:
+    elif groqToken:
         # Use Groq API if token is provided
         try:
-            response = askGroqAPI(source_term, target_paragraphs, target_language, source_language, groqToken)
+            response = askGroqAPI(source_term, target_paragraphs,
+                                  target_language, groqToken,
+                                  source_language
+                                  )
             return response
         except Exception as e:
             return f"Error extracting term equivalents with Groq API: {str(e)}"
@@ -460,13 +465,14 @@ def askGroqAPI(sourceTerm, target_paragraphs, TargetLanguage, token, sourceLangu
     Returns:
         dict: JSON response with translations in multiple languages
     """
-    from groq import Groq
-    import json
+    
     # Initialize OpenAI client with local endpoint
     #client = OpenAI(base_url=url, api_key="lm-studio")
-    os.environ["GROQ_API_KEY"] = token
+    #os.environ["GROQ_API_KEY"] = token
+    #print(os.environ.get('GROQ_API_KEY')) 
     client = Groq(
-        api_key=os.environ.get("GROQ_API_KEY")
+        #api_key=os.environ.get("GROQ_API_KEY")
+        api_key=token,
         )
     
     # Create the prompt as a nested dictionary (will be converted to JSON)
