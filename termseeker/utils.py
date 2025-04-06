@@ -591,7 +591,7 @@ def consolidate_results(metadataCleaned, exportExcel=False) -> list:
         metadataCleaned: List of dictionaries containing the metadata
         
     Returns:
-        List of dictionaries with consolidated data
+        List of dictionaries with consolidated data that can be easily converted as a DataFrame
     """
     if not metadataCleaned:
         return []
@@ -616,10 +616,36 @@ def consolidate_results(metadataCleaned, exportExcel=False) -> list:
                 continue
                 
             # Process Term keys
-            if key.endswith('Term'):
+            if key.endswith('Term') and key != 'EnglishTerm':  # Skip EnglishTerm as that's our grouping key
+                lang = key.replace('Term', '')  # Extract language prefix (e.g., "Spanish" from "SpanishTerm")
+                synonyms_key = f"{lang}Synonyms"  # Create corresponding synonyms key
+                
                 if key not in consolidated[english_term]:
+                    # First occurrence - set as the primary term
                     consolidated[english_term][key] = value
-                    
+                else:
+                    # This is a subsequent term value - add it to synonyms
+                    if value:  # Just check if value exists, don't compare with primary term
+                        # Initialize synonyms list if needed
+                        if synonyms_key not in consolidated[english_term]:
+                            consolidated[english_term][synonyms_key] = []
+                        
+                        # Add to synonyms list (as a singleton list or directly)
+                        if isinstance(value, list):
+                            if synonyms_key in consolidated[english_term]:
+                                consolidated[english_term][synonyms_key].extend(value)
+                            else:
+                                consolidated[english_term][synonyms_key] = value
+                        else:
+                            if synonyms_key in consolidated[english_term]:
+                                consolidated[english_term][synonyms_key].append(value)
+                            else:
+                                consolidated[english_term][synonyms_key] = [value]
+                        
+                        # Remove duplicates
+                        consolidated[english_term][synonyms_key] = list(set(consolidated[english_term][synonyms_key]))
+            
+            
             # Process Synonyms keys
             elif key.endswith('Synonyms'):
                 if value is None:
